@@ -1,0 +1,39 @@
+# .github/workflows/deploy.yml
+
+name: Deploy na AWS          # nome que aparece na aba Actions do GitHub
+
+on:
+  push:
+    branches:
+      - main                 # só roda quando fizer push na main
+
+permissions:
+  id-token: write            # necessário para autenticar na AWS via OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest   # máquina virtual que vai executar tudo
+
+    steps:
+      - name: Baixar o código
+        uses: actions/checkout@v4
+
+      - name: Autenticar na AWS
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::503577850481:role/devops-role
+          aws-region: sa-east-1
+
+      - name: Verificar autenticação
+        run: aws sts get-caller-identity
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.15.6
+
+      - name: Rodar Terraform
+        run: |
+          terraform init
+          terraform apply -auto-approve
